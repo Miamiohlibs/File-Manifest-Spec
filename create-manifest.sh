@@ -12,7 +12,7 @@ if [[ ! -d "$dir" ]]; then
 fi
 
 #print the header
-echo "Path${output_delimiter}Date_created$output_delimiterSizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
+echo "Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
 
 # Loop through each subdirectory and print its size
 while IFS= read -r subdir; do
