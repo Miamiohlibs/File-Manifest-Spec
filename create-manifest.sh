@@ -20,6 +20,7 @@ header+="Size(Human-readable)${output_delimiter}"
 header+="NumFiles${output_delimiter}"
 header+="Extension${output_delimiter}"
 header+="Depth"
+echo $header
 # echo "Folder${output_delimiter}Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
 
 # Loop through each subdirectory and print its size
@@ -29,12 +30,13 @@ while IFS= read -r subdir; do
     size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
     num_files=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
 
-    { # Try to get the date created
+    # Try to get the date created
         # Windows
         date_created=$(stat -c %y "$subdir" 2> /dev/null | awk '{print $1}') #2> /dev/null suppress error msg on mac
-    } || { # Mac
-        date_created=$(stat -f %SB "$subdir" ) 
-    }
+    # Mac
+    if ["$date_created" = ""]; then
+        date_created=$(stat -f %SB "$subdir" | xargs -I{} date -j -f "%b %d %T %Y" "{}" "+%Y-%m-%d %H:%M:%S") 
+    fi
 
     files=$(find "$subdir" -type f)              
     extensions=$(echo "$files" | awk -F. '{print $NF}' | sort | uniq | sort -nr | tr '\n' ',')
