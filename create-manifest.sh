@@ -18,7 +18,7 @@ join_by() {
 }
 
 # Get the directory from the first argument
-dir=$1
+dir="${1%/}"  # Remove trailing slash if present
 base_depth=$(echo "$dir" | tr -cd '/' | wc -c) # Count the number of slashes
 
 # Check if the directory exists
