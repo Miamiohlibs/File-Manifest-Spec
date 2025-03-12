@@ -34,7 +34,7 @@ while IFS= read -r subdir; do
         # Windows
         date_created=$(stat -c %y "$subdir" 2> /dev/null | awk '{print $1}') #2> /dev/null suppress error msg on mac
     # Mac
-    if ["$date_created" = ""]; then
+    if [ "$date_created" = "" ]; then
         date_created=$(stat -f %SB "$subdir" | xargs -I{} date -j -f "%b %d %T %Y" "{}" "+%Y-%m-%d %H:%M:%S") 
     fi
 
