@@ -12,7 +12,15 @@ if [[ ! -d "$dir" ]]; then
 fi
 
 #print the header
-echo "Folder${output_delimiter}Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
+header="Folder${output_delimiter}"
+header+="Path${output_delimiter}"
+header+="Date_created${output_delimiter}"
+header+="SizeInBytes${output_delimiter}"
+header+="Size(Human-readable)${output_delimiter}"
+header+="NumFiles${output_delimiter}"
+header+="Extension${output_delimiter}"
+header+="Depth"
+# echo "Folder${output_delimiter}Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
 
 # Loop through each subdirectory and print its size
 while IFS= read -r subdir; do
@@ -23,7 +31,7 @@ while IFS= read -r subdir; do
 
     { # Try to get the date created
         # Windows
-        date_created=$(stat -c %y "$subdir" | awk '{print $1}') 
+        date_created=$(stat -c %y "$subdir" 2> /dev/null | awk '{print $1}') #2> /dev/null suppress error msg on mac
     } || { # Mac
         date_created=$(stat -f %SB "$subdir" ) 
     }
