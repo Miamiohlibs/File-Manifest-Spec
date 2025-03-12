@@ -12,15 +12,22 @@ if [[ ! -d "$dir" ]]; then
 fi
 
 #print the header
-echo "Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
+echo "Folder${output_delimiter}Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
 
 # Loop through each subdirectory and print its size
 while IFS= read -r subdir; do
+    folder_name=$(basename "$subdir")
     size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
     size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
     num_files=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
-    # date_created=$(stat -c %y "$subdir" | awk '{print $1}') # Date created
-    date_created=$(stat -f %SB "$subdir" ) # Date created
+
+    { # Try to get the date created
+        # Windows
+        date_created=$(stat -c %y "$subdir" | awk '{print $1}') 
+    } || { # Mac
+        date_created=$(stat -f %SB "$subdir" ) 
+    }
+
     files=$(find "$subdir" -type f)              
     extensions=$(echo "$files" | awk -F. '{print $NF}' | sort | uniq | sort -nr | tr '\n' ',')
     extensions=${extensions%,}  # Remove trailing comma
@@ -28,6 +35,6 @@ while IFS= read -r subdir; do
     relative_depth=$((depth - base_depth)) # Calculate the relative depth
     # rowArray+=("$subdir,$size_bytes,$size_human,$num_files")
     # Print the details joined by the delimiter
-    echo "$subdir$output_delimiter$date_created$output_delimiter$size_bytes$output_delimiter$size_human$output_delimiter$num_files$output_delimiter$extensions$output_delimiter$relative_depth"
+    echo "$folder_name$output_delimiter$subdir$output_delimiter$date_created$output_delimiter$size_bytes$output_delimiter$size_human$output_delimiter$num_files$output_delimiter$extensions$output_delimiter$relative_depth"
     # echo "Path: $subdir | SizeInBytes: $size_bytes | Human-readable: $size_human | NumFiles: $num_files"
 done < <(find "$dir" -type d)
