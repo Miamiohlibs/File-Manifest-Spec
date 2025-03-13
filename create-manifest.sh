@@ -61,17 +61,27 @@ while IFS= read -r subdir; do
     
     # rowArray=("$folder_name" "$subdir" "$date_created" "$size_bytes" "$size_human" "$num_files" "$extensions" "$relative_depth")
     
+    rowArray=(
+        "$folder_name" #Folder 
+        "$subdir" #Path
+        "$date_created" #Date_created
+        "$size_bytes" #SizeInBytes
+        "$size_human" #Size(Human-readable)
+        "$num_files" #NumFiles
+        "$extensions" #Extension
+        "$relative_depth" #Depth
+        )
     # Print the details joined by the delimiter
-    # echo $(join_by "$output_delimiter" "${rowArray[@]}")
-    line="${folder_name}${output_delimiter}" #Folder
-    line+="${subdir}${output_delimiter}" #Path
-    line+="${date_created}${output_delimiter}" #Date_created
-    line+="${size_bytes}${output_delimiter}" #SizeInBytes
-    line+="${size_human}${output_delimiter}" #Size(Human-readable)
-    line+="${num_files}${output_delimiter}" #NumFiles
-    line+="${extensions}${output_delimiter}" #Extension
-    line+="${relative_depth}" #Depth
-    # Print the line
-    echo "$line"
-    # echo "$folder_name$output_delimiter$subdir$output_delimiter$date_created$output_delimiter$size_bytes$output_delimiter$size_human$output_delimiter$num_files$output_delimiter$extensions$output_delimiter$relative_depth"
+    echo "$(join_by "$output_delimiter" "${rowArray[@]}")"
+    # line="${folder_name}${output_delimiter}" #Folder
+    # line+="${subdir}${output_delimiter}" #Path
+    # line+="${date_created}${output_delimiter}" #Date_created
+    # line+="${size_bytes}${output_delimiter}" #SizeInBytes
+    # line+="${size_human}${output_delimiter}" #Size(Human-readable)
+    # line+="${num_files}${output_delimiter}" #NumFiles
+    # line+="${extensions}${output_delimiter}" #Extension
+    # line+="${relative_depth}" #Depth
+    # # Print the line
+    # # echo "$line"
+    # # echo "$folder_name$output_delimiter$subdir$output_delimiter$date_created$output_delimiter$size_bytes$output_delimiter$size_human$output_delimiter$num_files$output_delimiter$extensions$output_delimiter$relative_depth"
 done < <(find "$dir" -type d)
