@@ -20,5 +20,5 @@ Note: as a bash script, this is intended to run in a Unix-like environment
 
 ## Credits
 
-Author: Ken Irwin, irwinkr@miamioh.edu
-Date: 2025-03-13
+- Author: Ken Irwin, irwinkr@miamioh.edu
+- Date: 2025-03-13
