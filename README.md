@@ -18,6 +18,12 @@ for the purposes of digital preservation and archiving.
 Note: as a bash script, this is intended to run in a Unix-like environment
 (Linux, macOS, etc.). To run on Windows, use [git-bash](https://git-scm.com/downloads/win).
 
+## License
+
+This open-source script is licensed under the MIT License. See the LICENSE file for details.
+The script is provided "as-is" without any warranty of any kind, either express or implied.
+You are free to use, modify, and distribute this script as long as you include the original license.
+
 ## Credits
 
 - Author: Ken Irwin, irwinkr@miamioh.edu
