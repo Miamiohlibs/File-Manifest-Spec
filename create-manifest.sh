@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # creates a manifest of the files in a directory and its subdirectories
-# Usage: ./create-manifest.sh <directory> > manifest.csv
+# Usage: ./create-manifest.sh <directory> > manifest.tsv
 # This script generates a single tab-separated file
 #
 # Note: as a bash script, this is intended to run in a Unix-like environment
