@@ -28,16 +28,15 @@ if [[ ! -d "$dir" ]]; then
 fi
 
 #print the header
-# header="Folder${output_delimiter}"
-# header+="Path${output_delimiter}"
-# header+="Date_created${output_delimiter}"
-# header+="SizeInBytes${output_delimiter}"
-# header+="Size(Human-readable)${output_delimiter}"
-# header+="NumFiles${output_delimiter}"
-# header+="Extension${output_delimiter}"
-# header+="Depth"
-# echo $header
-echo "Folder${output_delimiter}Path${output_delimiter}Date_created${output_delimiter}SizeInBytes${output_delimiter}Size(Human-readable)${output_delimiter}NumFiles${output_delimiter}Extension${output_delimiter}Depth"
+header="Folder${output_delimiter}"
+header+="Path${output_delimiter}"
+header+="Date_created${output_delimiter}"
+header+="SizeInBytes${output_delimiter}"
+header+="Size(Human-readable)${output_delimiter}"
+header+="NumFiles${output_delimiter}"
+header+="Extension${output_delimiter}"
+header+="Depth"
+echo "$header" # using quotes preserves tab delimiters
 
 # Loop through each subdirectory and print its size
 while IFS= read -r subdir; do
