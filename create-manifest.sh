@@ -68,11 +68,11 @@ base_depth=$(echo "$dir" | tr -cd '/' | wc -c) # Count the number of slashes
 #print the header
 header="Folder${output_delimiter}"
 header+="Path${output_delimiter}"
-header+="Date_created${output_delimiter}"
-header+="SizeInBytes${output_delimiter}"
-header+="Size(Human-readable)${output_delimiter}"
-header+="NumFiles${output_delimiter}"
-header+="Extension${output_delimiter}"
+header+="Date Created${output_delimiter}"
+header+="Size In Bytes${output_delimiter}"
+header+="Size (Human-readable)${output_delimiter}"
+header+="File Count${output_delimiter}"
+header+="Extensions${output_delimiter}"
 header+="Depth"
 echo "$header" # using quotes preserves tab delimiters
 
@@ -81,7 +81,7 @@ while IFS= read -r subdir; do
     folder_name=$(basename "$subdir")
     size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
     size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
-    num_files=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
+    file_count=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
 
     # Get the date created
     # Windows
@@ -104,11 +104,11 @@ while IFS= read -r subdir; do
     rowArray=(
         "$folder_name" #Folder 
         "$subdir" #Path
-        "$date_created" #Date_created
-        "$size_bytes" #SizeInBytes
+        "$date_created" #Date Created
+        "$size_bytes" #Size In Bytes
         "$size_human" #Size(Human-readable)
-        "$num_files" #NumFiles
-        "$extensions" #Extension
+        "$file_count" #File Count
+        "$extensions" #Extensions
         "$relative_depth" #Depth
         )
 
