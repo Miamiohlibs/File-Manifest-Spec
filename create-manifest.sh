@@ -1,8 +1,13 @@
 #!/bin/bash
 
-# creates a manifest of the files in a directory and its subdirectories
-# Usage: ./create-manifest.sh <directory> > manifest.tsv
-# This script generates a single tab-separated file
+# Creates a manifest of the files in a directory and its subdirectories,
+# output is a delimited file with information about each subdirectory.
+#
+# Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.tsv
+#        -c: Use comma as the delimiter (default is tab)
+#        -t: Use tab as the delimiter (default is tab)
+#        <directory>: The directory to scan (required)
+#        > manifest.tsv: Redirects the output to a file named manifest.tsv
 #
 # Note: as a bash script, this is intended to run in a Unix-like environment
 # (Linux, macOS, etc.). To run on Windows, use git-bash.
@@ -32,7 +37,8 @@ done
 output_delimiter=$'\t' # Default to tab
 if $flag_c; then
     output_delimiter=','  # Comma if -c is set
-elif $flag_t; then
+fi
+if $flag_t; then
     output_delimiter=$'\t'  # Tab if -t is set
 fi
 
