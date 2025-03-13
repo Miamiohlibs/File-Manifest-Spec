@@ -3,11 +3,11 @@
 # Creates a manifest of the files in a directory and its subdirectories,
 # output is a delimited file with information about each subdirectory.
 #
-# Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.tsv
-#        -c: Use comma as the delimiter (default is tab)
-#        -t: Use tab as the delimiter (default is tab)
+# Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv
+#        -c: Use comma as the delimiter (default is comma)
+#        -t: Use tab as the delimiter (default is comma), should output to tsv not csv
 #        <directory>: The directory to scan (required)
-#        > manifest.tsv: Redirects the output to a file named manifest.tsv
+#        > manifest.csv: Redirects the output to a file named manifest.csv
 #
 # Note: as a bash script, this is intended to run in a Unix-like environment
 # (Linux, macOS, etc.). To run on Windows, use git-bash.
@@ -34,7 +34,7 @@ while [[ "$1" =~ ^- ]]; do
 done
 
 # Set the output delimiter based on flags
-output_delimiter=$'\t' # Default to tab
+output_delimiter=',' # Default to tab
 if $flag_c; then
     output_delimiter=','  # Comma if -c is set
 fi
