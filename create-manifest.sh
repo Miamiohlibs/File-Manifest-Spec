@@ -10,19 +10,51 @@
 # Author: Ken Irwin, irwinkr@miamioh.edu
 # Date: 2025-03-13
 
-output_delimiter=$'\t'
-
 # join_by: Join an array by a delimiter
 # Usage: join_by "," "${array[@]}"
 
-# Get the directory from the first argument
+# Default values for optional flags
+flag_c=false
+flag_t=false
+
+# Parse options
+while [[ "$1" =~ ^- ]]; do
+    case "$1" in
+        -c) flag_c=true ;;  # Set flag_c to true if -c is provided #comma, but not real csv
+        -t) flag_t=true ;;  # Set flag_t to true if -t is provided #tab
+        --) shift; break ;;  # Stop processing flags if '--' is encountered
+        *) echo "Unknown option: $1" >&2; exit 1 ;;  # Handle unknown flags
+    esac
+    shift  # Move to the next argument
+done
+
+# Set the output delimiter based on flags
+output_delimiter=$'\t' # Default to tab
+if $flag_c; then
+    output_delimiter=','  # Comma if -c is set
+elif $flag_t; then
+    output_delimiter=$'\t'  # Tab if -t is set
+fi
+
+# Capture the directory argument after options
 dir="${1%/}"  # Remove trailing slash if present
+
+# Check if directory is missing
+if [[ -z "$dir" ]]; then
+    echo "Error: No directory specified." >&2
+    exit 1
+fi
 
 # Check if the directory exists
 if [[ ! -d "$dir" ]]; then
-    echo "Error: Directory '$dir' does not exist."
+    echo "Error: Directory '$dir' does not exist." >&2
     exit 1
 fi
+
+# Debug output (optional)
+# echo "Flag -c: $flag_c"
+# echo "Flag -t: $flag_t"
+# echo "Directory: $dir"
 
 # get the base directory depth in the filesystem
 base_depth=$(echo "$dir" | tr -cd '/' | wc -c) # Count the number of slashes
@@ -77,10 +109,22 @@ while IFS= read -r subdir; do
     # Print the details joined by the delimiter
     join_by() {
         local delimiter="$1"
+        #if first element contains a comma, wrap it in quotes
+
         shift
-        local joined="$1"
+        #if first element contains a comma, wrap it in quotes
+        if [[ "$1" == *","* ]]; then
+            local joined="\"$1\""
+        else
+            local joined="$1"
+        fi
+        # local joined="$1"
         shift
         for element in "$@"; do
+            #if delimiter is comma and element contains a comma, add quotes
+            if [[ "$delimiter" == "," && "$element" == *","* ]]; then
+                element="\"$element\""
+            fi
             joined+="$delimiter$element"
         done
         echo "$joined"
