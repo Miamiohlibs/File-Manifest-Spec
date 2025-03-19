@@ -63,7 +63,7 @@ if $flag_t; then
 fi
 
 # Capture the directory argument after options
-dir="${1%/}"  # Remove trailing slash if present
+dir=$(realpath "${1%/}")  # Remove trailing slash if present
 
 # Check if directory is missing
 if [[ -z "$dir" ]]; then
