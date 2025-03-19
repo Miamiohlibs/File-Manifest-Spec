@@ -184,7 +184,13 @@ if ! $flag_H; then
         # top_subdirs=$(ls -d "$dir"/*/)
         # Loop through each subdirectory and print its info
         while IFS= read -r topsubdir; do
-            print_subdir_info "$topsubdir"
+            folder_name=$(basename "$topsubdir")
+            if [ "$folder_name" = "#recycle" ]; then
+                : # do nothing
+            else
+                print_subdir_info "$topsubdir"
+            fi
+            
         done < <(ls -d "$dir"/*/)
     else
         print_subdir_info "$dir"
