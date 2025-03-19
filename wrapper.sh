@@ -11,6 +11,34 @@
 # Usage: ./wrapper.sh <directory> > manifest.csv
 #        <directory>: The directory to scan (required)  
 
+
+flag_h=false #help
+flag_H=false #header only
+flag_t=false #tsv output
+
+# Parse options
+while [[ "$1" =~ ^- ]]; do
+    case "$1" in
+        -h) flag_h=true ;;  # Set flag_h to true if -h is provided #help
+        -t) flag_t=true ;;  # Set flag_t to true if -t is provided #tsv output
+        --) shift; break ;;  # Stop processing flags if '--' is encountered
+        *) echo "Unknown option: $1" >&2; exit 1 ;;  # Handle unknown flags
+    esac
+    shift  # Move to the next argument
+done
+
+if ($flag_h); then
+    echo "Usage: ./wrapper.sh <directory> > manifest.csv"
+    echo "       <directory>: The directory to scan (required)"
+    exit 0
+fi
+
+if ($flag_t); then
+    flags_to_pass = "-t"
+else
+    flags_to_pass = "-c"
+fi
+
 # Capture the directory argument after options
 dir=$(realpath "${1%/}")  # Remove trailing slash if present
 
@@ -37,6 +65,6 @@ while IFS= read -r subdir; do
         : # do nothing
     else
         # echo "$folder_name"
-        ./create-manifest.sh -d "$subdir"
+        ./create-manifest.sh -d $flags_to_pass "$subdir"
     fi
 done <<< "$all_dirs"
