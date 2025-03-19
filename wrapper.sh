@@ -34,9 +34,9 @@ if ($flag_h); then
 fi
 
 if ($flag_t); then
-    flags_to_pass = "-t"
+    flags_to_pass="-t"
 else
-    flags_to_pass = "-c"
+    flags_to_pass="-c"
 fi
 
 # Capture the directory argument after options
@@ -57,14 +57,13 @@ fi
 all_dirs=$(ls -d "$dir"/*/)
 
 #first, print the header only
-./create-manifest.sh -H "$dir"
+./create-manifest.sh -H $flags_to_pass "$dir"
 
 while IFS= read -r subdir; do
     folder_name=$(basename "$subdir")
     if [ "$folder_name" = "#recycle" ]; then
         : # do nothing
     else
-        # echo "$folder_name"
         ./create-manifest.sh -d $flags_to_pass "$subdir"
     fi
 done <<< "$all_dirs"
