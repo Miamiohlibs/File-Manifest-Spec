@@ -19,6 +19,11 @@ all_dirs=$(ls -d "$dir"/*/)
 
 while IFS= read -r subdir; do
     folder_name=$(basename "$subdir")
-    # echo "$folder_name"
-    ./create-manifest.sh "$subdir"
+    if [ "$folder_name" = "#recycle" ]; then
+        #ignore
+        echo ""
+    else
+        # echo "$folder_name"
+        ./create-manifest.sh "$subdir"
+    fi
 done <<< "$all_dirs"
