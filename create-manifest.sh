@@ -5,6 +5,8 @@
 #
 # Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv
 #        -c: Use comma as the delimiter (default is comma)
+#        -d: Data only, do not include the header
+#        -H: Header only, do not include the data
 #        -t: Use tab as the delimiter (default is comma), should output to tsv not csv
 #        <directory>: The directory to scan (required)
 #        > manifest.csv: Redirects the output to a file named manifest.csv
@@ -19,19 +21,37 @@
 # Usage: join_by "," "${array[@]}"
 
 # Default values for optional flags
-flag_c=false
-flag_t=false
+flag_c=false #csv output 
+flag_d=false #data only
+flag_h=false #help
+flag_H=false #header only
+flag_t=false #tsv output
 
 # Parse options
 while [[ "$1" =~ ^- ]]; do
     case "$1" in
-        -c) flag_c=true ;;  # Set flag_c to true if -c is provided #comma, but not real csv
-        -t) flag_t=true ;;  # Set flag_t to true if -t is provided #tab
+        -c) flag_c=true ;;  # Set flag_c to true if -c is provided #csv output
+        -d) flag_d=true ;;  # Set flag_d to true if -d is provided #data only
+        -h) flag_h=true ;;  # Set flag_h to true if -h is provided #help
+        -H) flag_H=true ;;  # Set flag_h to true if -h is provided #header only
+        -t) flag_t=true ;;  # Set flag_t to true if -t is provided #tsv output
         --) shift; break ;;  # Stop processing flags if '--' is encountered
         *) echo "Unknown option: $1" >&2; exit 1 ;;  # Handle unknown flags
     esac
     shift  # Move to the next argument
 done
+
+# if flag_h is set, print help message
+if $flag_h; then
+    echo "Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv"
+    echo "       -c: Use comma as the delimiter (default is comma)"
+    echo "       -d: Data only, do not include the header"
+    echo "       -H: Header only, do not include the data"
+    echo "       -t: Use tab as the delimiter (default is comma)"
+    echo "       <directory>: The directory to scan (required)"
+    echo "       > manifest.csv: Redirects the output to a file named manifest.csv"
+    exit 0
+fi
 
 # Set the output delimiter based on flags
 output_delimiter=',' # Default to tab
@@ -74,66 +94,73 @@ header+="Size (Human-readable)${output_delimiter}"
 header+="File Count${output_delimiter}"
 header+="Extensions${output_delimiter}"
 header+="Depth"
-echo "$header" # using quotes preserves tab delimiters
 
-# Loop through each subdirectory and print its size
-while IFS= read -r subdir; do
-    folder_name=$(basename "$subdir")
-    size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
-    size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
-    file_count=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
+# Print the header if -d is not set 
+if ! $flag_d; then
+    echo "$header" # using quotes preserves tab delimiters
+fi
 
-    # Get the date created
-    # Windows
-    date_created=$(stat -c %y "$subdir" 2> /dev/null |  awk '{print $1, $2}' | cut -d '.' -f1) #2> /dev/null suppress error msg on mac
-    # Mac
-    if [ "$date_created" = "" ]; then
-        date_created=$(stat -f %SB "$subdir" | xargs -I{} date -j -f "%b %d %T %Y" "{}" "+%Y-%m-%d %H:%M:%S") 
-    fi
+# Print the data if -H is not set
+if ! $flag_H; then
+    # Loop through each subdirectory and print its size
+    while IFS= read -r subdir; do
+        folder_name=$(basename "$subdir")
+        size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
+        size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
+        file_count=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
 
-    # get all the file extensions in the subdirectory and its decendants
-    files=$(find "$subdir" -type f)              
-    extensions=$(echo "$files" | awk -F. '{print $NF}' | sort | uniq | sort -nr | tr '\n' ',')
-    extensions=${extensions%,}  # Remove trailing comma
-
-    # get the depth of the subdirectory relative to the starting directory
-    depth=$(echo "$subdir" | tr -cd '/' | wc -c) # Count the number of slashes
-    relative_depth=$((depth - base_depth)) # Calculate the relative depth
-    
-    # Create an array to hold the values
-    rowArray=(
-        "$folder_name" #Folder 
-        "$subdir" #Path
-        "$date_created" #Date Created
-        "$size_bytes" #Size In Bytes
-        "$size_human" #Size(Human-readable)
-        "$file_count" #File Count
-        "$extensions" #Extensions
-        "$relative_depth" #Depth
-        )
-
-    # Print the details joined by the delimiter
-    join_by() {
-        local delimiter="$1"
-        #if first element contains a comma, wrap it in quotes
-
-        shift
-        #if first element contains a comma, wrap it in quotes
-        if [[ "$1" == *","* ]]; then
-            local joined="\"$1\""
-        else
-            local joined="$1"
+        # Get the date created
+        # Windows
+        date_created=$(stat -c %y "$subdir" 2> /dev/null |  awk '{print $1, $2}' | cut -d '.' -f1) #2> /dev/null suppress error msg on mac
+        # Mac
+        if [ "$date_created" = "" ]; then
+            date_created=$(stat -f %SB "$subdir" | xargs -I{} date -j -f "%b %d %T %Y" "{}" "+%Y-%m-%d %H:%M:%S") 
         fi
-        # local joined="$1"
-        shift
-        for element in "$@"; do
-            #if delimiter is comma and element contains a comma, add quotes
-            if [[ "$delimiter" == "," && "$element" == *","* ]]; then
-                element="\"$element\""
+
+        # get all the file extensions in the subdirectory and its decendants
+        files=$(find "$subdir" -type f)              
+        extensions=$(echo "$files" | awk -F. '{print $NF}' | sort | uniq | sort -nr | tr '\n' ',')
+        extensions=${extensions%,}  # Remove trailing comma
+
+        # get the depth of the subdirectory relative to the starting directory
+        depth=$(echo "$subdir" | tr -cd '/' | wc -c) # Count the number of slashes
+        relative_depth=$((depth - base_depth)) # Calculate the relative depth
+        
+        # Create an array to hold the values
+        rowArray=(
+            "$folder_name" #Folder 
+            "$subdir" #Path
+            "$date_created" #Date Created
+            "$size_bytes" #Size In Bytes
+            "$size_human" #Size(Human-readable)
+            "$file_count" #File Count
+            "$extensions" #Extensions
+            "$relative_depth" #Depth
+            )
+
+        # Print the details joined by the delimiter
+        join_by() {
+            local delimiter="$1"
+            #if first element contains a comma, wrap it in quotes
+
+            shift
+            #if first element contains a comma, wrap it in quotes
+            if [[ "$1" == *","* ]]; then
+                local joined="\"$1\""
+            else
+                local joined="$1"
             fi
-            joined+="$delimiter$element"
-        done
-        echo "$joined"
-    }
-    echo "$(join_by "$output_delimiter" "${rowArray[@]}")"
-done < <(find "$dir" -type d)
+            # local joined="$1"
+            shift
+            for element in "$@"; do
+                #if delimiter is comma and element contains a comma, add quotes
+                if [[ "$delimiter" == "," && "$element" == *","* ]]; then
+                    element="\"$element\""
+                fi
+                joined+="$delimiter$element"
+            done
+            echo "$joined"
+        }
+        echo "$(join_by "$output_delimiter" "${rowArray[@]}")"
+    done < <(find "$dir" -type d)
+fi
