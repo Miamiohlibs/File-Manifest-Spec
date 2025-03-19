@@ -1,7 +1,18 @@
 #!/bin/bash
 
+# This script runs the create-manifest.sh script on all subdirectories
+# in a given directory. It will call create-manifest.sh for each subdirectory and
+# output the results to stdout. The output will be a CSV file with a header row
+# followed by a row for each subdirectory.
+# IMPORTANT NOTE: This script is intended for very large folders. The NOT report an entry for the
+# top level folder, which may be too big to process. This script will skip the top level folder
+# and process just the subdirectories.
+
+# Usage: ./wrapper.sh <directory> > manifest.csv
+#        <directory>: The directory to scan (required)  
+
 # Capture the directory argument after options
-dir="${1%/}"  # Remove trailing slash if present
+dir=$(realpath "${1%/}")  # Remove trailing slash if present
 
 # Check if directory is missing
 if [[ -z "$dir" ]]; then
