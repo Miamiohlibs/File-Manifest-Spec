@@ -27,22 +27,71 @@ flag_c=false #csv output
 flag_d=false #data only
 flag_h=false #help
 flag_H=false #header only
+flag_p=false #preview (show which folders will be processed but do not process them)
 flag_s=false #skip top level folder
 flag_t=false #tsv output
+num_folders=""
+offset=""
+alpha_start=""
+alpha_end=""
 
-# Parse options
-while [[ "$1" =~ ^- ]]; do
+# Parse arguments
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -c) flag_c=true ;;  # Set flag_c to true if -c is provided #csv output
-        -d) flag_d=true ;;  # Set flag_d to true if -d is provided #data only
-        -h) flag_h=true ;;  # Set flag_h to true if -h is provided #help
-        -H) flag_H=true ;;  # Set flag_h to true if -h is provided #header only
-        -s) flag_s=true ;;  # Set flag_s to true if -s is provided #skip top level folder
-        -t) flag_t=true ;;  # Set flag_t to true if -t is provided #tsv output
-        --) shift; break ;;  # Stop processing flags if '--' is encountered
-        *) echo "Unknown option: $1" >&2; exit 1 ;;  # Handle unknown flags
+        -c)
+            flag_c=true #csv output
+            shift
+            ;;
+        -d | --data)
+            flag_d=true #data only
+            shift
+            ;;
+        -h | --help)
+            flag_h=true #help
+            shift
+            ;;
+        -H)
+            flag_H=true #header only
+            shift
+            ;;
+        -p | --preview)
+            flag_p=true #preview which files would be processed but do not process them
+            shift
+            ;;
+        -s)
+            flag_s=true #skip top level folder
+            shift
+            ;;
+        -t)
+            flag_t=true #tsv output
+            shift
+            ;;
+        --num-folders=*)
+            num_folders="${1#*=}"
+            shift
+            ;;
+        --offset=*)
+            offset="${1#*=}"
+            shift
+            ;;
+        --alpha-start=*)
+            alpha_start="${1#*=}"
+            shift
+            ;;
+        --alpha-end=*)
+            alpha_end="${1#*=}"
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+        *)
+            dir=$(realpath "${1%/}")  # Remove trailing slash if present
+            # file_path="$1"
+            shift
+            ;;
     esac
-    shift  # Move to the next argument
 done
 
 # if flag_h is set, print help message
@@ -58,6 +107,18 @@ if $flag_h; then
     exit 0
 fi
 
+# Check if directory is missing
+if [[ -z "$dir" ]]; then
+    echo "Error: No directory specified." >&2
+    exit 1
+fi
+
+# Check if the directory exists
+if [[ ! -d "$dir" ]]; then
+    echo "Error: Directory '$dir' does not exist." >&2
+    exit 1
+fi
+
 # Set the output delimiter based on flags
 output_delimiter=',' # Default to tab
 if $flag_c; then
@@ -66,9 +127,6 @@ fi
 if $flag_t; then
     output_delimiter=$'\t'  # Tab if -t is set
 fi
-
-# Capture the directory argument after options
-dir=$(realpath "${1%/}")  # Remove trailing slash if present
 
 # Check if directory is missing
 if [[ -z "$dir" ]]; then
@@ -82,10 +140,19 @@ if [[ ! -d "$dir" ]]; then
     exit 1
 fi
 
-# Debug output (optional)
+# Debug output 
 # echo "Flag -c: $flag_c"
+# echo "Flag -d: $flag_d"
+# echo "Flag -h: $flag_h"
+# echo "Flag -H: $flag_H"
+# echo "Flag -p: $flag_p"
+# echo "Flag -s: $flag_s"
 # echo "Flag -t: $flag_t"
-# echo "Directory: $dir"
+# echo "Num Folders: ${num_folders:-not set}"
+# echo "Offset: ${offset:-not set}"
+# echo "Alpha Start: ${alpha_start:-not set}"
+# echo "Alpha End: ${alpha_end:-not set}"
+# echo "Dir: $dir"
 
 # get the base directory depth in the filesystem
 base_depth=$(echo "$dir" | tr -cd '/' | wc -c) # Count the number of slashes
@@ -184,7 +251,7 @@ if ! $flag_H; then
         # top_subdirs=$(ls -d "$dir"/*/)
         # Loop through each subdirectory and print its info
         while IFS= read -r topsubdir; do
-            folder_name=$(basename "$topsubdir")
+            folder_name=$(basename "$topsubdir")            
             if [ "$folder_name" = "#recycle" ]; then
                 : # do nothing
             else
