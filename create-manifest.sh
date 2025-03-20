@@ -6,12 +6,21 @@
 # Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv
 #        -c: Use comma as the delimiter (default is comma)
 #        -d: Data only, do not include the header
+#        --debug: Enable debug output
 #        -h: Help, print usage information
 #        -H: Header only, do not include the data
+#        -p: Preview which files would be processed but do not process them
 #        -s: Skip top level folder in output (saves a lot of time for large folders)
 #        -t: Use tab as the delimiter (default is comma), should output to tsv not csv
 #        <directory>: The directory to scan (required)
 #        > manifest.csv: Redirects the output to a file named manifest.csv
+#
+#        These flags are only available if -s is set:
+#        --num-folders=<number>: Limit the number of folders to process (default is all)
+#        --offset=<number>: Start processing folders from this offset (default is 0)
+#        --alpha-start=<string>: Start processing folders from this string 
+#        --alpha-end=<string>: Stop processing folders at this string 
+
 #
 # Note: as a bash script, this is intended to run in a Unix-like environment
 # (Linux, macOS, etc.). To run on Windows, use git-bash.
@@ -25,6 +34,7 @@
 # Default values for optional flags
 flag_c=false #csv output 
 flag_d=false #data only
+flag_debug=false #debug 
 flag_h=false #help
 flag_H=false #header only
 flag_p=false #preview (show which folders will be processed but do not process them)
@@ -44,6 +54,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -d | --data)
             flag_d=true #data only
+            shift
+            ;;
+        --debug)
+            flag_debug=true #debug
             shift
             ;;
         -h | --help)
@@ -99,6 +113,7 @@ if $flag_h; then
     echo "Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv"
     echo "       -c: Use comma as the delimiter (default is comma)"
     echo "       -d: Data only, do not include the header"
+    echo "       --debug: Enable debug output"
     echo "       -H: Header only, do not include the data"
     echo "       -s: Skip top level folder in output (saves a lot of time for large folders)"
     echo "       -t: Use tab as the delimiter (default is comma)"
@@ -183,18 +198,19 @@ function LimitFolders() {
 }
 
 # Debug output 
-# echo "Flag -c: $flag_c"
-# echo "Flag -d: $flag_d"
-# echo "Flag -h: $flag_h"
-# echo "Flag -H: $flag_H"
-# echo "Flag -p: $flag_p"
-# echo "Flag -s: $flag_s"
-# echo "Flag -t: $flag_t"
-# echo "Num Folders: ${num_folders:-not set}"
-# echo "Offset: ${offset:-not set}"
-# echo "Alpha Start: ${alpha_start:-not set}"
-# echo "Alpha End: ${alpha_end:-not set}"
-# echo "Dir: $dir"
+echo "Flag -c: $flag_c"
+echo "Flag -d: $flag_d"
+echo "Flag --debug: $flag_debug"
+echo "Flag -h: $flag_h"
+echo "Flag -H: $flag_H"
+echo "Flag -p: $flag_p"
+echo "Flag -s: $flag_s"
+echo "Flag -t: $flag_t"
+echo "Num Folders: ${num_folders:-not set}"
+echo "Offset: ${offset:-not set}"
+echo "Alpha Start: ${alpha_start:-not set}"
+echo "Alpha End: ${alpha_end:-not set}"
+echo "Dir: $dir"
 
 # get the base directory depth in the filesystem
 base_depth=$(echo "$dir" | tr -cd '/' | wc -c) # Count the number of slashes
@@ -215,6 +231,51 @@ if ! $flag_d; then
 fi
 
 # Note: folder iterating logic is BELOW the following function
+
+#############################################
+# filter folders based on inputs
+
+FilterFolders () { 
+    if [ -n "$alpha_start$alpha_end" ]; then
+        # If alpha_start and alpha_end are set, filter alphabetically
+        if [ "$flag_debug" = true ] ; then
+            echo "Filtering by alpha_start and/or alpha_end"
+        fi
+        # Ensure alpha_start and alpha_end are set to default values if empty
+        if [ "$alpha_start" == "" ]; then
+            alpha_start=" "
+        fi
+        if [ "$alpha_end" == "" ]; then
+            alpha_end="~~~~~~~~~~~~~~~"
+        fi
+        # Filter folders by basename in a case-insensitive way
+        filtered_folders=()
+        for folder in "${folders_to_process[@]}"; do
+            basename=$(basename "$folder" | tr '[:upper:]' '[:lower:]')  # Get basename & convert to lowercase
+            if [[ "$basename" > "$alpha_start" && "$basename" < "$alpha_end" ]]; then
+                filtered_folders+=("$folder")
+            fi
+        done
+    elif [ -n "$num_folders$offset" ]; then
+    # If num_folders and offset are set, filter numerically
+        if [ "$flag_debug" = true ]; then
+            echo "Filtering by num_folders and/or offset"
+        fi
+        # Filter folders by num_folders and offset
+        if [ -z "$offset" ]; then
+            offset=0
+        fi
+        if [ -z "$num_folders" ]; then
+            num_folders=${#folders_to_process[@]}  # Default to all folders if num_folders is not set
+        fi
+        filtered_folders=("${folders_to_process[@]:$offset:$num_folders}")
+
+    else
+        # No filtering applied, use all folders
+        filtered_folders=("${folders_to_process[@]}")
+    fi
+    folders_to_process=("${filtered_folders[@]}") # Update the global folders_to_process array
+}
 
 #############################################
 # Loop through each subdirectory and print its size
@@ -285,41 +346,46 @@ function print_subdir_info() {
 }
 #############################################
 
-
 # Print the data if -H is not set
 if ! $flag_H; then
 # If -s is set, skip the top level folder
     if $flag_s; then
-        # Get a list of all top-level subdirectories
-        # top_subdirs=$(ls -d "$dir"/*/)
-        folders_to_process=$(ls -d "$dir"/*/)
-        if $hasFolderLimiter; then
-            # Limit the folders to process based on the provided flags
-            LimitFolders
-        fi
+        # Initialize an empty array
+        folders_to_process=()
+
+        # Read folder names safely into the array (handling spaces)
+        while IFS= read -r folder; do
+            # Skip the folder if it is "#recycle"
+            if [ "$(basename "$folder")" != "#recycle" ]; then
+                folders_to_process+=("$folder")
+            fi
+        done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d |sort )
+
+        FilterFolders # Filter the folders based on the provided flags
 
         # If Preview, just list the folders to print and then exit
         if $flag_p; then
-            echo "Preview of folders to process:"
-            while IFS= read -r topsubdir; do
-                folder_name=$(basename "$topsubdir")
-                if [ "$folder_name" != "#recycle" ]; then
-                    echo "$topsubdir"
-                fi
-            done <<< "$folders_to_process"
+            # Print the folders to process
+            echo "Folders to process:"
+            for folder in "${folders_to_process[@]}"; do
+                echo "$(basename "$folder")"
+            done
+            echo
+            echo "Number of folders to process: ${#folders_to_process[@]}"
             exit 0
         fi
         # If not preview, process the folders
         # Loop through folders_to_process and print its info
-        while IFS= read -r topsubdir; do
-            folder_name=$(basename "$topsubdir")            
-            if [ "$folder_name" = "#recycle" ]; then
-                : # do nothing
-            else
-                print_subdir_info "$topsubdir"
+        if [ "$flag_debug" = true ]; then
+            echo "Folders to process: ${folders_to_process[@]}"
+        fi
+        for topsubdir in "${folders_to_process[@]}"; do
+            folder_name=$(basename "$topsubdir")   
+            if [ "$flag_debug" = true ]; then
+                echo "Processing folder: $topsubdir"
             fi
-            
-        done <<< "$folders_to_process"
+            print_subdir_info "$topsubdir"
+        done
     else
         print_subdir_info "$dir"
     fi
