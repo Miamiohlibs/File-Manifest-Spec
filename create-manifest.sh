@@ -6,7 +6,9 @@
 # Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv
 #        -c: Use comma as the delimiter (default is comma)
 #        -d: Data only, do not include the header
+#        -h: Help, print usage information
 #        -H: Header only, do not include the data
+#        -s: Skip top level folder in output (saves a lot of time for large folders)
 #        -t: Use tab as the delimiter (default is comma), should output to tsv not csv
 #        <directory>: The directory to scan (required)
 #        > manifest.csv: Redirects the output to a file named manifest.csv
@@ -25,6 +27,7 @@ flag_c=false #csv output
 flag_d=false #data only
 flag_h=false #help
 flag_H=false #header only
+flag_s=false #skip top level folder
 flag_t=false #tsv output
 
 # Parse options
@@ -34,6 +37,7 @@ while [[ "$1" =~ ^- ]]; do
         -d) flag_d=true ;;  # Set flag_d to true if -d is provided #data only
         -h) flag_h=true ;;  # Set flag_h to true if -h is provided #help
         -H) flag_H=true ;;  # Set flag_h to true if -h is provided #header only
+        -s) flag_s=true ;;  # Set flag_s to true if -s is provided #skip top level folder
         -t) flag_t=true ;;  # Set flag_t to true if -t is provided #tsv output
         --) shift; break ;;  # Stop processing flags if '--' is encountered
         *) echo "Unknown option: $1" >&2; exit 1 ;;  # Handle unknown flags
@@ -47,6 +51,7 @@ if $flag_h; then
     echo "       -c: Use comma as the delimiter (default is comma)"
     echo "       -d: Data only, do not include the header"
     echo "       -H: Header only, do not include the data"
+    echo "       -s: Skip top level folder in output (saves a lot of time for large folders)"
     echo "       -t: Use tab as the delimiter (default is comma)"
     echo "       <directory>: The directory to scan (required)"
     echo "       > manifest.csv: Redirects the output to a file named manifest.csv"
@@ -100,9 +105,13 @@ if ! $flag_d; then
     echo "$header" # using quotes preserves tab delimiters
 fi
 
-# Print the data if -H is not set
-if ! $flag_H; then
-    # Loop through each subdirectory and print its size
+# Note: folder iterating logic is BELOW the following function
+
+#############################################
+# Loop through each subdirectory and print its size
+
+function print_subdir_info() {
+    start_dir=$1
     while IFS= read -r subdir; do
         folder_name=$(basename "$subdir")
         size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
@@ -162,5 +171,28 @@ if ! $flag_H; then
             echo "$joined"
         }
         echo "$(join_by "$output_delimiter" "${rowArray[@]}")"
-    done < <(find "$dir" -type d)
+    done < <(find "$start_dir" -type d)
+}
+#############################################
+
+
+# Print the data if -H is not set
+if ! $flag_H; then
+# If -s is set, skip the top level folder
+    if $flag_s; then
+        # Get a list of all top-level subdirectories
+        # top_subdirs=$(ls -d "$dir"/*/)
+        # Loop through each subdirectory and print its info
+        while IFS= read -r topsubdir; do
+            folder_name=$(basename "$topsubdir")
+            if [ "$folder_name" = "#recycle" ]; then
+                : # do nothing
+            else
+                print_subdir_info "$topsubdir"
+            fi
+            
+        done < <(ls -d "$dir"/*/)
+    else
+        print_subdir_info "$dir"
+    fi
 fi
