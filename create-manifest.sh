@@ -140,6 +140,48 @@ if [[ ! -d "$dir" ]]; then
     exit 1
 fi
 
+# validate flags for limiting the number of folders to process
+# if any of the flags are set, check for conflicts
+hasFolderLimiter=false
+if [ "$offset$num_folders$alpha_start$alpha_end" != "" ]; then
+    hasFolderLimiter=true
+    if ! $flag_s; then
+        echo "Error: -s flag must be set when using --offset, --num-folders, --alpha-start, or --alpha-end flags." >&2
+        exit 1
+    fi
+    if [ "$offset$num_folders" != "" ] && [ "$alpha_start$alpha_end" != "" ]; then
+        echo "Error: --offset and --num-folders flags cannot be with --alpha-start or --alpha-end." >&2
+        exit 1
+    fi
+fi  
+
+function LimitFolders() {
+    # Placeholder for the function to get a subarray of folders
+    # based on the provided offset, num_folders, alpha_start, and alpha_end
+    # This function should return a list of folders to process
+    echo "LimitFolders NumF: $num_folders"
+    echo "LimitFolders Offset: $offset"
+    echo "LimitFolders Alpha Start: $alpha_start"
+    echo "LimitFolders Alpha End: $alpha_end"
+    echo "Process Folders: $folders_to_process"
+
+    # echo "Length: ${#folders_to_process[@]}"
+
+    if [ -n "$num_folders$offset"  ]; then
+        if [ ! -n "$offset" ]; then
+            offset=0
+        fi
+        start_index=$((offset + 1)) 
+        end_index=$((offset + num_folders)) #unless num_folders is empty, in which case...
+        if [ ! -n "$num_folders" ]; then
+            end_index="$ " # to end of list if no num_folders set
+        fi
+        echo "Start Index: $start_index"
+        echo "End Index: $end_index" 
+        folders_to_process=$(echo "$folders_to_process" | sed -n "${start_index},${end_index}p")
+    fi
+}
+
 # Debug output 
 # echo "Flag -c: $flag_c"
 # echo "Flag -d: $flag_d"
@@ -181,6 +223,7 @@ function print_subdir_info() {
     start_dir=$1
     while IFS= read -r subdir; do
         folder_name=$(basename "$subdir")
+        subdir=$(realpath "$subdir")  # Get the absolute path of the subdirectory
         size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
         size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
         file_count=$(find "$subdir" -type f | wc -l | awk '{$1=$1;print}') # Number of files 
@@ -249,7 +292,25 @@ if ! $flag_H; then
     if $flag_s; then
         # Get a list of all top-level subdirectories
         # top_subdirs=$(ls -d "$dir"/*/)
-        # Loop through each subdirectory and print its info
+        folders_to_process=$(ls -d "$dir"/*/)
+        if $hasFolderLimiter; then
+            # Limit the folders to process based on the provided flags
+            LimitFolders
+        fi
+
+        # If Preview, just list the folders to print and then exit
+        if $flag_p; then
+            echo "Preview of folders to process:"
+            while IFS= read -r topsubdir; do
+                folder_name=$(basename "$topsubdir")
+                if [ "$folder_name" != "#recycle" ]; then
+                    echo "$topsubdir"
+                fi
+            done <<< "$folders_to_process"
+            exit 0
+        fi
+        # If not preview, process the folders
+        # Loop through folders_to_process and print its info
         while IFS= read -r topsubdir; do
             folder_name=$(basename "$topsubdir")            
             if [ "$folder_name" = "#recycle" ]; then
@@ -258,7 +319,7 @@ if ! $flag_H; then
                 print_subdir_info "$topsubdir"
             fi
             
-        done < <(ls -d "$dir"/*/)
+        done <<< "$folders_to_process"
     else
         print_subdir_info "$dir"
     fi
