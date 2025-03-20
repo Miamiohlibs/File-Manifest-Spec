@@ -157,9 +157,8 @@ fi
 
 # validate flags for limiting the number of folders to process
 # if any of the flags are set, check for conflicts
-hasFolderLimiter=false
+
 if [ "$offset$num_folders$alpha_start$alpha_end" != "" ]; then
-    hasFolderLimiter=true
     if ! $flag_s; then
         echo "Error: -s flag must be set when using --offset, --num-folders, --alpha-start, or --alpha-end flags." >&2
         exit 1
@@ -170,47 +169,24 @@ if [ "$offset$num_folders$alpha_start$alpha_end" != "" ]; then
     fi
 fi  
 
-function LimitFolders() {
-    # Placeholder for the function to get a subarray of folders
-    # based on the provided offset, num_folders, alpha_start, and alpha_end
-    # This function should return a list of folders to process
-    echo "LimitFolders NumF: $num_folders"
-    echo "LimitFolders Offset: $offset"
-    echo "LimitFolders Alpha Start: $alpha_start"
-    echo "LimitFolders Alpha End: $alpha_end"
-    echo "Process Folders: $folders_to_process"
-
-    # echo "Length: ${#folders_to_process[@]}"
-
-    if [ -n "$num_folders$offset"  ]; then
-        if [ ! -n "$offset" ]; then
-            offset=0
-        fi
-        start_index=$((offset + 1)) 
-        end_index=$((offset + num_folders)) #unless num_folders is empty, in which case...
-        if [ ! -n "$num_folders" ]; then
-            end_index="$ " # to end of list if no num_folders set
-        fi
-        echo "Start Index: $start_index"
-        echo "End Index: $end_index" 
-        folders_to_process=$(echo "$folders_to_process" | sed -n "${start_index},${end_index}p")
-    fi
-}
-
 # Debug output 
-echo "Flag -c: $flag_c"
-echo "Flag -d: $flag_d"
-echo "Flag --debug: $flag_debug"
-echo "Flag -h: $flag_h"
-echo "Flag -H: $flag_H"
-echo "Flag -p: $flag_p"
-echo "Flag -s: $flag_s"
-echo "Flag -t: $flag_t"
-echo "Num Folders: ${num_folders:-not set}"
-echo "Offset: ${offset:-not set}"
-echo "Alpha Start: ${alpha_start:-not set}"
-echo "Alpha End: ${alpha_end:-not set}"
-echo "Dir: $dir"
+if [ "$flag_debug" = true ]; then
+    echo "Debug mode is enabled."
+    echo "Flags:"
+    echo "Flag -c: $flag_c"
+    echo "Flag -d: $flag_d"
+    echo "Flag --debug: $flag_debug"
+    echo "Flag -h: $flag_h"
+    echo "Flag -H: $flag_H"
+    echo "Flag -p: $flag_p"
+    echo "Flag -s: $flag_s"
+    echo "Flag -t: $flag_t"
+    echo "Num Folders: ${num_folders:-not set}"
+    echo "Offset: ${offset:-not set}"
+    echo "Alpha Start: ${alpha_start:-not set}"
+    echo "Alpha End: ${alpha_end:-not set}"
+    echo "Dir: $dir"
+fi
 
 # get the base directory depth in the filesystem
 base_depth=$(echo "$dir" | tr -cd '/' | wc -c) # Count the number of slashes
