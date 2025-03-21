@@ -263,7 +263,7 @@ function print_subdir_info() {
         subdir=$(realpath "$subdir")  # Get the absolute path of the subdirectory
         size_bytes=$(du -sk "$subdir" | awk '{print $1 * 1024}')  # Convert KB to Bytes
         size_human=$(du -sh "$subdir" | awk '{print $1}')         # Human-readable size
-        file_count=$(find "$subdir" -name '#recycle' -prune -o -type f | wc -l | awk '{$1=$1;print}') # Number of files 
+        file_count=$(find "$subdir" -type f | grep -v '#recycle' | wc -l | awk '{$1=$1;print}') # Number of files 
 
         # Get the date created
         # Windows
@@ -274,7 +274,7 @@ function print_subdir_info() {
         fi
 
         # get all the file extensions in the subdirectory and its decendants
-        files=$(find "$subdir" -name '#recycle' -prune -o -type f)              
+        files=$(find "$subdir" -type f | grep -v '#recycle')              
         extensions=$(echo "$files" | awk -F. '{print $NF}' | sort | uniq | sort -nr | tr '\n' ',')
         extensions=${extensions%,}  # Remove trailing comma
 
@@ -318,7 +318,7 @@ function print_subdir_info() {
             echo "$joined"
         }
         echo "$(join_by "$output_delimiter" "${rowArray[@]}")"
-    done < <(find "$start_dir" -name '#recycle' -prune -o -type d)
+    done < <(find "$start_dir" -type d | grep -v '#recycle')
 }
 #############################################
 
@@ -335,7 +335,7 @@ if ! $flag_H; then
             if [ "$(basename "$folder")" != "#recycle" ]; then
                 folders_to_process+=("$folder")
             fi
-        done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d |sort )
+        done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d | sort )
 
         FilterFolders # Filter the folders based on the provided flags
 
