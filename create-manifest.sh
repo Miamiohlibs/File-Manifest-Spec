@@ -201,8 +201,8 @@ header+="File Count${output_delimiter}"
 header+="Extensions${output_delimiter}"
 header+="Depth"
 
-# Print the header if -d is not set 
-if ! $flag_d; then
+# Print the header if -d (data-only) and -p (preview folders) flags are not set 
+if ! $flag_d && ! $flag_p; then
     echo "$header" # using quotes preserves tab delimiters
 fi
 
