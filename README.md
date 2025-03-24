@@ -8,12 +8,47 @@ for the purposes of digital preservation and archiving.
 
 ## Usage
 
-`./create-manifest.sh [-c] [-t] <directory> > manifest.csv`
+```
+Usage: ./create-manifest.sh [-c | -t] [-D | --data | -H | --header]
+                            [--debug] [-h | --help]
+                            [-s [-p | --preview]]
+                            [{[--num-folders=<number>] [--offset=<number>]} |
+                             {[--alpha-start=<string>] [--alpha-end=<string>]}]
+                            <directory> > manifest.csv
+```
 
-- `-c`: output in CSV format (default)
-- `-t`: output in TSV (tab-separated) format, should output to manifest.tsv (not csv)
-- `<directory>`: The directory to scan (required)
-- `> manifest.csv`: Redirects the output to a file named manifest.csv
+### Options
+
+#### Output format (optional)
+
+- `-c`, `--csv`: Output in CSV format (default)
+- `-t`, `--tsv`: Output in TSV format
+- `-D`, `--data`: Output only the data (no header)
+- `-H`, `--header`: Output only the header (no data)
+
+#### Handling large directories (optional)
+
+- `-s`: Skip the top-level directory. Without this flag, the top-level directory is included in the output. This can be very slow for large directories. The `-s` flag omits this and allows you to restrict the output to only a subset of the subdirectories, making it easier to process in smaller chunks.
+
+##### Limiting output numerically (only in combination with `-s`)
+
+- `--num-folders=<number>`: Limit the output to `<number>` subdirectories. By default it will start with first subdirectory, but you can modify this with the `--offset` flag.
+- `--offset=<number>`: Start the output at the `<number>`th subdirectory. This is useful for resuming a previous run or skipping over a large number of subdirectories.
+- `-p`, `--preview`: Preview the output without writing to a file. This is useful for testing the script with the `-s` flag to see how many subdirectories will be included in the output.
+
+##### Limiting output alphabetically (only in combination with `-s`)
+
+- `--alpha-start=<string>`: Start the output at the first subdirectory that comes after `<string>` alphabetically. This is useful for resuming a previous run or skipping over a large number of subdirectories. Default is the first subdirectory.
+- `--alpha-end=<string>`: End the output at the last subdirectory that comes before `<string>` alphabetically. This is useful for limiting the output to a subset of subdirectories. Default is the last subdirectory.
+
+##### Previewing which subdirectories will be included in the output
+
+- `-p`, `--preview`: Preview which subdirectories will be included . This is useful for testing the script with the `-s` and the alphabetical or numerical limiter flag to see how which subdirectories will be included in the output if you run it without the `-p` flag.
+
+#### Debugging/helpers (optional)
+
+- `-d`, `--debug`: Print debugging information
+- `-h`, `--help`: Print help message
 
 Note: as a bash script, this is intended to run in a Unix-like environment
 (Linux, macOS, etc.). To run on Windows, use [git-bash](https://git-scm.com/downloads/win).
