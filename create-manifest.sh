@@ -3,13 +3,18 @@
 # Creates a manifest of the files in a directory and its subdirectories,
 # output is a delimited file with information about each subdirectory.
 #
-# Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv
+# Usage: ./create-manifest.sh [-c | -t] [-D | --data | -H | --header] 
+#                             [--debug] [-h | --help]
+#                             [-s [-p | --preview]]
+#                             [{[--num-folders=<number>] [--offset=<number>]} | 
+#                              {[--alpha-start=<string>] [--alpha-end=<string>]}]
+#                             <directory> > manifest.csv
 #        -c: Use comma as the delimiter (default is comma)
-#        -d: Data only, do not include the header
+#        -D, --data: Data only, do not include the header
 #        --debug: Enable debug output
-#        -h: Help, print usage information
-#        -H: Header only, do not include the data
-#        -p: Preview which files would be processed but do not process them
+#        -h, --help: Help, print usage information
+#        -H, --header: Header only, do not include the data
+#        -p, --preview: Preview which files would be processed but do not process them
 #        -s: Skip top level folder in output (saves a lot of time for large folders)
 #        -t: Use tab as the delimiter (default is comma), should output to tsv not csv
 #        <directory>: The directory to scan (required)
@@ -26,14 +31,11 @@
 # (Linux, macOS, etc.). To run on Windows, use git-bash.
 #
 # Author: Ken Irwin, irwinkr@miamioh.edu
-# Date: 2025-03-13
-
-# join_by: Join an array by a delimiter
-# Usage: join_by "," "${array[@]}"
+# Date: 2025-03-24
 
 # Default values for optional flags
 flag_c=false #csv output 
-flag_d=false #data only
+flag_data=false #data only
 flag_debug=false #debug 
 flag_h=false #help
 flag_H=false #header only
@@ -52,11 +54,11 @@ while [[ $# -gt 0 ]]; do
             flag_c=true #csv output
             shift
             ;;
-        -d | --data)
-            flag_d=true #data only
+        -D | --data)
+            flag_data=true #data only
             shift
             ;;
-        --debug)
+        -d | --debug)
             flag_debug=true #debug
             shift
             ;;
@@ -64,7 +66,7 @@ while [[ $# -gt 0 ]]; do
             flag_h=true #help
             shift
             ;;
-        -H)
+        -H | --header)
             flag_H=true #header only
             shift
             ;;
@@ -110,15 +112,12 @@ done
 
 # if flag_h is set, print help message
 if $flag_h; then
-    echo "Usage: ./create-manifest.sh [-c] [-t] <directory> > manifest.csv"
-    echo "       -c: Use comma as the delimiter (default is comma)"
-    echo "       -d: Data only, do not include the header"
-    echo "       --debug: Enable debug output"
-    echo "       -H: Header only, do not include the data"
-    echo "       -s: Skip top level folder in output (saves a lot of time for large folders)"
-    echo "       -t: Use tab as the delimiter (default is comma)"
-    echo "       <directory>: The directory to scan (required)"
-    echo "       > manifest.csv: Redirects the output to a file named manifest.csv"
+    echo "Usage: ./create-manifest.sh [-c | -t] [-D | --data | -H | --header] "
+    echo "                             [--debug] [-h | --help]"
+    echo "                             [-s [-p | --preview]]"
+    echo "                             [{[--num-folders=<number>] [--offset=<number>]} | "
+    echo "                              {[--alpha-start=<string>] [--alpha-end=<string>]}]"
+    echo "                             <directory> > manifest.csv"
     exit 0
 fi
 
@@ -141,6 +140,11 @@ if $flag_c; then
 fi
 if $flag_t; then
     output_delimiter=$'\t'  # Tab if -t is set
+fi
+
+if [[ "$flag_c" = true && "$flag_t" = true ]]; then
+    echo "Error: -c and -t cannot be used together." >&2
+    exit 1
 fi
 
 # Check if directory is missing
@@ -174,9 +178,9 @@ if [ "$flag_debug" = true ]; then
     echo "Debug mode is enabled."
     echo "Flags:"
     echo "Flag -c: $flag_c"
-    echo "Flag -d: $flag_d"
-    echo "Flag --debug: $flag_debug"
-    echo "Flag -h: $flag_h"
+    echo "Flag -D/--data: $flag_data"
+    echo "Flag -d/--debug: $flag_debug"
+    echo "Flag -h/--help: $flag_h"
     echo "Flag -H: $flag_H"
     echo "Flag -p: $flag_p"
     echo "Flag -s: $flag_s"
@@ -202,7 +206,7 @@ header+="Extensions${output_delimiter}"
 header+="Depth"
 
 # Print the header if -d (data-only) and -p (preview folders) flags are not set 
-if ! $flag_d && ! $flag_p; then
+if ! $flag_data && ! $flag_p; then
     echo "$header" # using quotes preserves tab delimiters
 fi
 
